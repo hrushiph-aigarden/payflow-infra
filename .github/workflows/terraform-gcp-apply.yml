@@ -1,0 +1,35 @@
+name: 'Terraform GCP Apply on Merge'
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'terraform/environments/gcp-dev/**', 'terraform/modules/gcp-*/**' ]
+
+jobs:
+  apply:
+    name: 'GCP Apply'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.x
+
+      - name: Terraform Init & Apply
+        run: |
+          cd terraform/environments/gcp-dev
+          terraform init
+          terraform workspace select gcp-dev || terraform workspace new gcp-dev
+          terraform apply -auto-approve -var="gcp_project=${{ secrets.GCP_PROJECT_ID }}" -var="db_password=${{ secrets.GCP_DB_PASSWORD }}"

@@ -14,6 +14,9 @@ triggers:
   - infrastructure
   - deploy
   - helm
+  - gcp
+  - gcloud
+  - gke
 
 mcp_servers:
   - github-mcp-server
@@ -32,16 +35,18 @@ Your mission: fulfill infrastructure requests conversationally, without docs.
 
 ### Infrastructure Discovery (GitHub MCP)
 - List available Terraform modules in `payflow-infra/terraform/modules/`
+  - AWS: `eks-nodegroup`, `rds-postgres`, `kms-secrets`, `vpc-baseline`
+  - GCP (Cost-Optimized): `gcp-gke-cluster` (Autopilot), `gcp-cloud-sql` (db-f1-micro), `gcp-vpc-baseline`
 - Read environment configs from `terraform/environments/`
 - Create branches and PRs for infrastructure changes
 - Explain module inputs/outputs from code directly
 
 **Example**:
 ```
-Developer: "What PCI-compliant Terraform modules are available?"
+Developer: "What GCP-compliant Terraform modules are available?"
 Agent: [GitHub MCP] reads payflow-infra/terraform/modules/
-       Returns: eks-nodegroup, rds-postgres, kms-secrets, vpc-baseline
-       Explains each module's PCI controls from code comments
+       Returns: gcp-gke-cluster (Autopilot), gcp-cloud-sql (db-f1-micro), gcp-vpc-baseline
+       Explains each module's cost-optimized and PCI controls from code comments
 ```
 
 ### Work Item Creation (Jira MCP)
@@ -60,19 +65,21 @@ Agent: [GitHub MCP] reads payflow-infra/terraform/modules/
 - Update infrastructure inventory
 - Log audit trail with Jira + ServiceNow CHG numbers
 
-## Standard Workflow: Provision Dev Environment
+## Standard Workflow: Provision GCP Dev Environment
 
 ```
-Developer: "Provision a dev environment for PayFlow using the PCI template"
+Developer: "Provision a GCP dev environment for PayFlow using GKE Autopilot"
 
 Agent:
- 1. [GitHub MCP]      Read terraform/environments/dev/main.tf
- 2. [Jira MCP]        Create task: "Provision PayFlow dev env" under SCRUM-6
- 3. [GitHub MCP]      Create branch: feature/payflow-dev-{jira-key}
- 4. [ServiceNow MCP]  Create Standard Change: CHG auto-approved for dev
+ 1. [GitHub MCP]      Read terraform/environments/gcp-dev/main.tf
+ 2. [Jira MCP]        Create task: "Provision GCP dev env (Autopilot)" under SCRUM-6
+ 3. [GitHub MCP]      Create branch: feature/payflow-gcp-dev-{jira-key}
+ 4. [ServiceNow MCP]  Create Standard Change: CHG auto-approved for dev (localhost-access only)
  5. [GitHub MCP]      Push vars, open PR
  6. Report: "Task SCRUM-XX created, branch ready, CHG00XXXXX filed.
-             Estimated time to live environment: 12 minutes."
+             Provisioning GKE Autopilot & db-f1-micro Cloud SQL (est. 12 minutes).
+             No public load balancers created. Access will be via:
+             kubectl port-forward service/payflow-pro 8080:8080"
 ```
 
 ## Governance Rules
@@ -80,7 +87,8 @@ Agent:
 - NEVER apply changes without Jira ticket + ServiceNow CHG
 - NEVER bypass approval gates for staging/prod
 - ALWAYS tag resources with `pci-scope=true`
-- ALWAYS verify encryption-at-rest before provisioning RDS/EKS
+- ALWAYS configure databases to be private-only (Private IP / SQL Proxy)
+- ALWAYS verify encryption-at-rest before provisioning
 - ALWAYS create audit log entry in Confluence
 
 ## Quick Reference
@@ -97,3 +105,4 @@ Agent:
 
 ---
 *"The End of Documentation: MCP-Based Living Platform for Developer Self-Service"*
+
