@@ -24,9 +24,6 @@ resource "google_container_cluster" "autopilot" {
     services_secondary_range_name = "gke-services"
   }
 
-  # Shielded GKE Nodes (PCI Requirement)
-  enable_shielded_nodes = true
-
   release_channel {
     channel = "REGULAR"
   }

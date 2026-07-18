@@ -14,7 +14,7 @@ resource "google_compute_global_address" "private_ip_address" {
 resource "google_service_networking_connection" "private_vpc_connection" {
   network                 = var.network_id
   service                 = "servicenetworking.googleapis.com"
-  reserved_ip_range_names = [google_compute_global_address.private_ip_address.name]
+  reserved_peering_ranges = [google_compute_global_address.private_ip_address.name]
 }
 
 resource "google_sql_database_instance" "postgres" {
@@ -50,7 +50,7 @@ resource "google_sql_database_instance" "postgres" {
     insights_config {
       query_insights_enabled  = true
       record_application_tags = true
-      client_in_record_client_address = true
+      record_client_address   = true
     }
 
     # PCI-DSS Requirement 10.2: Postgres Audit Parameters

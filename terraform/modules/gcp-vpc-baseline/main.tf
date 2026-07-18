@@ -34,7 +34,7 @@ resource "google_compute_router" "router" {
 }
 
 # Cloud NAT (allows private nodes to fetch updates/packages without public IPs)
-resource "google_compute_nat" "nat" {
+resource "google_compute_router_nat" "nat" {
   name                               = "${var.environment}-payflow-nat"
   router                             = google_compute_router.router.name
   region                             = var.region

@@ -1,0 +1,22 @@
+# Local directory for Terraform
+.terraform/
+
+# Personal variables
+*.tfvars
+*.tfvars.json
+
+# Local state file and state backups
+terraform.tfstate
+terraform.tfstate.backup
+terraform.tfstate.d/
+
+# Crash log files
+crash.log
+
+# Exclude all .env files
+.env
+.env.*
+
+# Exclude plan files
+*plan*
+tfplan
