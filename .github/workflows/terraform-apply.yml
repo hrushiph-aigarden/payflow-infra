@@ -1,0 +1,72 @@
+name: 'Terraform Apply on Merge'
+
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'terraform/**' ]
+
+jobs:
+  apply-dev:
+    name: 'Apply Dev'
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-terraform-dev
+          aws-region: us-east-1
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: 1.9.x }
+      - run: |
+          cd terraform/environments/dev
+          terraform init
+          terraform workspace select dev
+          terraform apply -auto-approve
+
+  apply-staging:
+    name: 'Apply Staging (requires approval)'
+    needs: apply-dev
+    runs-on: ubuntu-latest
+    environment: staging
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-terraform-staging
+          aws-region: us-east-1
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: 1.9.x }
+      - run: |
+          cd terraform/environments/staging
+          terraform init
+          terraform workspace select staging
+          terraform apply -auto-approve
+
+  apply-prod:
+    name: 'Apply Prod (requires CAB approval + ServiceNow CHG)'
+    needs: apply-staging
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/gha-terraform-prod
+          aws-region: us-east-1
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: 1.9.x }
+      - run: |
+          cd terraform/environments/prod
+          terraform init
+          terraform workspace select prod
+          terraform apply -auto-approve
